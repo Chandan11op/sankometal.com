@@ -26,13 +26,34 @@ if(isset($_POST['submit']))
 	{
 		$errors .= "\n Bad email value!";
 	}
-	if(empty($_SESSION['6_letters_code'] ) ||
-	  strcasecmp($_SESSION['6_letters_code'], $_POST['6_letters_code']) != 0)
+	$turnstile_secret = '0x4AAAAAAEu5po4zHpNukWiLPM9y1FtUw2g';
+	$turnstile_response = isset($_POST['cf-turnstile-response']) ? $_POST['cf-turnstile-response'] : '';
+	
+	if(empty($turnstile_response))
 	{
-	//Note: the captcha code is compared case insensitively.
-	//if you want case sensitive match, update the check above to
-	// strcmp()
-		$errors .= "\n The captcha code does not match!";
+		$errors .= "\n Please complete the security verification!";
+	}
+	else
+	{
+		$url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+		$data = ['secret' => $turnstile_secret, 'response' => $turnstile_response];
+		$options = [
+			'http' => [
+				'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+				'method' => 'POST',
+				'content' => http_build_query($data)
+			]
+		];
+		$context = stream_context_create($options);
+		$result = @file_get_contents($url, false, $context);
+		if ($result !== false) {
+			$response = json_decode($result);
+			if (!$response->success) {
+				$errors .= "\n Security verification failed!";
+			}
+		} else {
+			$errors .= "\n Failed to connect to verification server!";
+		}
 	}
 	
 	if(empty($errors))
@@ -105,6 +126,7 @@ label,a, body
 </style>	
 <!-- a helper script for vaidating the form-->
 <script language="JavaScript" src="scripts/gen_validatorv31.js" type="text/javascript"></script>	
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 
 <body>
@@ -132,10 +154,7 @@ action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>">
 <textarea name="message" rows=3 cols=25><?php echo htmlentities($user_message) ?></textarea>
 </p>
 <p>
-<img src="captcha_code_file.php?rand=<?php echo rand(); ?>" id='captchaimg' ><br>
-<label for='message'>Enter the code above here :</label><br>
-<input id="6_letters_code" name="6_letters_code" type="text"><br>
-<small>Can't read the image? click <a href='javascript: refreshCaptcha();'>here</a> to refresh</small>
+<div class="cf-turnstile" data-sitekey="0x4AAAAAAEu5putwAR_2Bces"></div>
 </p>
 <input type="submit" value="Submit" name='submit'>
 </form>
@@ -152,12 +171,6 @@ frmvalidator.addValidation("name","req","Please provide your name");
 frmvalidator.addValidation("email","req","Please provide your email"); 
 frmvalidator.addValidation("email","email","Please enter a valid email address"); 
 </script>
-<script language='JavaScript' type='text/javascript'>
-function refreshCaptcha()
-{
-	var img = document.images['captchaimg'];
-	img.src = img.src.substring(0,img.src.lastIndexOf("?"))+"?rand="+Math.random()*1000;
-}
 </script>
 </body>
 </html>

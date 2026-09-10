@@ -37,6 +37,7 @@
 <script type="text/javascript" src="js/jquery.easy-pie-chart.js"></script><!-- EASY PIE JS FILE -->
 <script type="text/javascript" src="js/jquery.transit.min.js"></script><!-- TRANSITION JS FILE -->
 <script type="text/javascript" src="js/custom.js"></script><!-- CUSTOM JAVASCRIPT JS FILE -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <div id="container">
@@ -147,13 +148,8 @@
 		</div>
 		<textarea name="message" id="message" rows="4" placeholder="Enter your inquiry or requirement details..." style="width: 92%; padding: 8px 10px; resize: vertical;"></textarea>
 	</fieldset>
-	<fieldset style="margin-bottom: 15px; width: 100%; background: #f9f9f9; padding: 12px; border-radius: 4px; border: 1px solid #ccd0d9; box-sizing: border-box;">
-		<label style="font-weight: bold; margin-bottom: 6px; display: block; color: #333;">Security Verification Code:</label>
-		<div style="display: flex; align-items: center; margin-bottom: 10px; gap: 10px;">
-			<canvas id="captchaCanvas" width="130" height="36" style="border: 1px solid #ccd0d9; background: #ffffff; border-radius: 3px; cursor: pointer;" onclick="generateCaptcha()" title="Click to refresh"></canvas>
-			<button type="button" onclick="generateCaptcha()" style="background: #4a89dc; color: #ffffff; border: none; padding: 7px 12px; cursor: pointer; border-radius: 3px; font-size: 12px;"><i class="icon-refresh"></i> Refresh</button>
-		</div>
-		<input type="text" name="captcha_input" id="captcha_input" placeholder="Enter code shown above *" required style="width: 85%; padding: 8px 10px;" />
+	<fieldset style="margin-bottom: 15px; width: 100%;">
+		<div class="cf-turnstile" data-sitekey="0x4AAAAAAEu5putwAR_2Bces"></div>
 	</fieldset>
 	<div style="margin-top: 15px;">
 		<input type="submit" name="submit" value="Submit Enquiry" class="button medium blue round" style="cursor: pointer; padding: 10px 25px; font-weight: bold; background: #4a89dc; color: #fff; border: none; border-radius: 3px;" />
@@ -259,48 +255,10 @@
 </div>
 <!-- main container ends-->
 <script type="text/javascript">
-var generatedCaptchaCode = '';
-
-function generateCaptcha() {
-	var chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
-	generatedCaptchaCode = '';
-	for (var i = 0; i < 5; i++) {
-		generatedCaptchaCode += chars.charAt(Math.floor(Math.random() * chars.length));
-	}
-	var canvas = document.getElementById('captchaCanvas');
-	if (canvas && canvas.getContext) {
-		var ctx = canvas.getContext('2d');
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.fillStyle = '#f4f6f9';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		
-		// Noise lines
-		for (var l = 0; l < 4; l++) {
-			ctx.strokeStyle = 'rgba(74, 137, 220, ' + (0.15 + Math.random() * 0.2) + ')';
-			ctx.beginPath();
-			ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-			ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-			ctx.stroke();
-		}
-		
-		// Text
-		ctx.font = 'bold 20px Arial';
-		ctx.fillStyle = '#142864';
-		for (var c = 0; c < generatedCaptchaCode.length; c++) {
-			ctx.save();
-			ctx.translate(15 + c * 22, 25);
-			ctx.rotate((Math.random() - 0.5) * 0.25);
-			ctx.fillText(generatedCaptchaCode.charAt(c), 0, 0);
-			ctx.restore();
-		}
-	}
-}
-
 function validateEnquiryForm() {
 	var name = document.getElementById('name').value.trim();
 	var email = document.getElementById('email').value.trim();
 	var mobile = document.getElementById('mobile').value.trim();
-	var captchaInput = document.getElementById('captcha_input').value.trim();
 	var errorDiv = document.getElementById('form-error-msg');
 	
 	if (!name || !email || !mobile) {
@@ -309,23 +267,16 @@ function validateEnquiryForm() {
 		return false;
 	}
 	
-	if (captchaInput.toLowerCase() !== generatedCaptchaCode.toLowerCase()) {
-		errorDiv.innerText = 'Security verification code does not match. Please try again.';
+	var turnstileResponse = document.getElementsByName('cf-turnstile-response')[0];
+	if (!turnstileResponse || !turnstileResponse.value) {
+		errorDiv.innerText = 'Please complete the security verification.';
 		errorDiv.style.display = 'block';
-		generateCaptcha();
-		document.getElementById('captcha_input').value = '';
 		return false;
 	}
 	
 	errorDiv.style.display = 'none';
 	return true;
 }
-
-$(document).ready(function() {
-	if (document.getElementById('captchaCanvas')) {
-		generateCaptcha();
-	}
-});
 </script>
 </body>
 </html>

@@ -2,6 +2,39 @@
 
 if (isset($_POST['submit']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
 
+	// Turnstile verification
+	$turnstile_secret = '0x4AAAAAAEu5po4zHpNukWiLPM9y1FtUw2g';
+	$turnstile_response = isset($_POST['cf-turnstile-response']) ? $_POST['cf-turnstile-response'] : '';
+	
+	if (empty($turnstile_response)) {
+		echo "<script>alert('Please complete the security verification.'); window.history.back();</script>";
+		exit();
+	}
+	
+	$url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+	$data = ['secret' => $turnstile_secret, 'response' => $turnstile_response];
+	
+	$options = [
+		'http' => [
+			'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+			'method' => 'POST',
+			'content' => http_build_query($data)
+		]
+	];
+	$context = stream_context_create($options);
+	$result = @file_get_contents($url, false, $context);
+	
+	if ($result !== false) {
+		$response = json_decode($result);
+		if (!$response->success) {
+			echo "<script>alert('Security verification failed. Please try again.'); window.history.back();</script>";
+			exit();
+		}
+	} else {
+		echo "<script>alert('Failed to connect to verification server. Please try again.'); window.history.back();</script>";
+		exit();
+	}
+
 	$name = isset($_POST['name']) ? strip_tags($_POST['name']) : '';
 	$company = isset($_POST['company']) ? strip_tags($_POST['company']) : '';
 	$email = isset($_POST['email']) ? strip_tags($_POST['email']) : '';
