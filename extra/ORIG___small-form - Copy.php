@@ -1,0 +1,182 @@
+<?php 
+$your_email ='noreply@siddhagiri.net';// <<=== update to your email address
+
+session_start();
+$errors = '';
+$name = '';
+$company = '';
+$tel = '';
+$visitor_email = '';
+$user_message = '';
+
+if(isset($_POST['submit']))
+{
+	
+	$name = $_POST['name'];
+	$visitor_email = $_POST['email'];
+	$company = $_POST['company'];
+	$tel = $_POST['tel'];
+	$user_message = $_POST['message'];
+	///------------Do Validations-------------
+	if(empty($name)||empty($visitor_email))
+	{
+		$errors .= "\n Name and Email are required fields. ";	
+	}
+	if(IsInjected($visitor_email))
+	{
+		$errors .= "\n Bad email value!";
+	}
+	if(empty($_SESSION['6_letters_code'] ) ||
+	  strcasecmp($_SESSION['6_letters_code'], $_POST['6_letters_code']) != 0)
+	{
+	//Note: the captcha code is compared case insensitively.
+	//if you want case sensitive match, update the check above to
+	// strcmp()
+		$errors .= "\n The captcha code does not match!";
+	}
+	
+	if(empty($errors))
+	{
+		//send the email
+		$to = $your_email;
+		$subject="Enquiry from siddhagiri.net";
+		$from = $your_email;
+		$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+		
+		$body = "A user  $name submitted the contact form:\n".
+		"Name: $name\n".
+		"Tel: $tel\n".
+		"Email: $visitor_email \n".
+		"Message: \n ".
+		"$user_message\n".	
+		
+		$headers = "From: $from \r\n";
+		$headers .= "Reply-To: $visitor_email \r\n";
+		$headers .= "Cc: sales@siddhagiri.net \r\n"; 
+		$headers .= "Bcc: servetst@yahoo.com, contact@mesotek.com \r\n";
+		
+		mail($to, $subject, $body,$headers);
+		
+		header('Location: thanks.html');
+	}
+}
+
+// Function to validate against any email injection attempts
+function IsInjected($str)
+{
+  $injections = array('(\n+)',
+              '(\r+)',
+              '(\t+)',
+              '(%0A+)',
+              '(%0D+)',
+              '(%08+)',
+              '(%09+)'
+              );
+  $inject = join('|', $injections);
+  $inject = "/$inject/i";
+  if(preg_match($inject,$str))
+    {
+    return true;
+  }
+  else
+    {
+    return false;
+  }
+}
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+<html>
+<head>
+	<title>Contact Us</title>
+<!-- define some style elements-->
+<style>
+label,a, body 
+{
+	font-family : Arial, Helvetica, sans-serif;
+	font-size : 12px; 
+}
+.err
+{
+	font-family : Verdana, Helvetica, sans-serif;
+	font-size : 12px;
+	color: red;
+}
+.formfield {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	font-weight: normal;
+	color: #999999;
+	width: 150px;
+	border: 1px solid #CCCCCC;
+}
+</style>	
+<!-- a helper script for vaidating the form-->
+<script language="JavaScript" src="scripts/gen_validatorv31.js" type="text/javascript"></script>	
+<script type="text/javascript">
+
+		document.oncontextmenu = function() { return false; }
+		document.ondragstart = function() { return false; }
+		document.onselectstart = function() { return false; }
+		document.onbeforecopy = function() { return false; }
+		document.onmouseup = function() { return false; }
+
+</script>
+<link href="css/enquiryform.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<?php
+if(!empty($errors)){
+echo "<p class='err'>".nl2br($errors)."</p>";
+}
+?>
+<div id='contact_form_errorloc' class='err'></div>
+<form method="POST" name="contact_form" 
+action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>">
+<p>
+<label for='name'>Name: </label><br>
+<input name="name" type="text" class="formfield" value='<?php echo htmlentities($name) ?>'>
+</p>
+<p>
+<label for='email'>Email: </label><br>
+<input name="email" type="text" class="formfield" value='<?php echo htmlentities($visitor_email) ?>'>
+</p>
+<p>
+<label for='message'>Tel:</label> <br>
+<input name="tel" type="text" class="formfield" value='<?php echo htmlentities($tel) ?>'>
+</p>
+<p>
+<label for='message'>Requirement:</label> <br>
+<textarea name="message" cols=30 rows=6 class="formfield"><?php echo htmlentities($user_message) ?></textarea>
+</p>
+<p>
+<img src="captcha_code_file.php?rand=<?php echo rand(); ?>" id='captchaimg' ><br>
+<label for='message'>Enter the code above here :</label><br>
+<input name="6_letters_code" type="text" class="formfield" id="6_letters_code">
+<br>
+<small>Can't read the image? click <a href='javascript: refreshCaptcha();'>here</a> to refresh</small>
+</p>
+<input type="submit" value="Submit" name='submit'>
+</form>
+<script language="JavaScript">
+// Code for validating the form
+// Visit http://www.javascript-coder.com/html-form/javascript-form-validation.phtml
+// for details
+var frmvalidator  = new Validator("contact_form");
+//remove the following two lines if you like error message box popups
+frmvalidator.EnableOnPageErrorDisplaySingleBox();
+frmvalidator.EnableMsgsTogether();
+
+frmvalidator.addValidation("name","req","Please provide your name"); 
+frmvalidator.addValidation("email","req","Please provide your email"); 
+frmvalidator.addValidation("email","email","Please enter a valid email address"); 
+</script>
+<script language='JavaScript' type='text/javascript'>
+function refreshCaptcha()
+{
+	var img = document.images['captchaimg'];
+	img.src = img.src.substring(0,img.src.lastIndexOf("?"))+"?rand="+Math.random()*1000;
+}
+</script>
+</body>
+</html>

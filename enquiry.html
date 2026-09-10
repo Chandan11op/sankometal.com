@@ -123,7 +123,42 @@
                 	<section class="one-half">
 				
 				
-<iframe allowtransparency="true" marginwidth="0" marginheight="0" hspace="0" vspace="0" frameborder="0" scrolling="No" src="small-form.php" width="500px" height="697px"></iframe>
+<form action="send_mail.php" method="post" class="simple-form" id="enquiry-form" onsubmit="return validateEnquiryForm()">
+	<div id="form-error-msg" style="color: #db4453; margin-bottom: 12px; font-weight: bold; font-size: 13px; display: none;"></div>
+	<fieldset style="margin-bottom: 12px; width: 100%;">
+		<i class="icon-building tooltip left" title="Company Name" style="padding-top: 10px;"></i>
+		<input type="text" name="company" id="company" placeholder="Company Name" style="width: 85%; padding: 8px 10px;" />
+	</fieldset>
+	<fieldset style="margin-bottom: 12px; width: 100%;">
+		<i class="icon-user tooltip left" title="Your Name" style="padding-top: 10px;"></i>
+		<input type="text" name="name" id="name" required placeholder="Your Name *" style="width: 85%; padding: 8px 10px;" />
+	</fieldset>
+	<fieldset style="margin-bottom: 12px; width: 100%;">
+		<i class="icon-envelope tooltip left" title="Your Email" style="padding-top: 10px;"></i>
+		<input type="email" name="email" id="email" required placeholder="Your Email *" style="width: 85%; padding: 8px 10px;" />
+	</fieldset>
+	<fieldset style="margin-bottom: 12px; width: 100%;">
+		<i class="icon-phone tooltip left" title="Mobile / Phone" style="padding-top: 10px;"></i>
+		<input type="text" name="mobile" id="mobile" required placeholder="Mobile / Phone No. *" style="width: 85%; padding: 8px 10px;" />
+	</fieldset>
+	<fieldset style="margin-bottom: 12px; width: 100%;">
+		<div class="input-title" style="margin: 5px 0 5px 5px; font-weight: bold; color: #555;">
+			Requirement Details:
+		</div>
+		<textarea name="message" id="message" rows="4" placeholder="Enter your inquiry or requirement details..." style="width: 92%; padding: 8px 10px; resize: vertical;"></textarea>
+	</fieldset>
+	<fieldset style="margin-bottom: 15px; width: 100%; background: #f9f9f9; padding: 12px; border-radius: 4px; border: 1px solid #ccd0d9; box-sizing: border-box;">
+		<label style="font-weight: bold; margin-bottom: 6px; display: block; color: #333;">Security Verification Code:</label>
+		<div style="display: flex; align-items: center; margin-bottom: 10px; gap: 10px;">
+			<canvas id="captchaCanvas" width="130" height="36" style="border: 1px solid #ccd0d9; background: #ffffff; border-radius: 3px; cursor: pointer;" onclick="generateCaptcha()" title="Click to refresh"></canvas>
+			<button type="button" onclick="generateCaptcha()" style="background: #4a89dc; color: #ffffff; border: none; padding: 7px 12px; cursor: pointer; border-radius: 3px; font-size: 12px;"><i class="icon-refresh"></i> Refresh</button>
+		</div>
+		<input type="text" name="captcha_input" id="captcha_input" placeholder="Enter code shown above *" required style="width: 85%; padding: 8px 10px;" />
+	</fieldset>
+	<div style="margin-top: 15px;">
+		<input type="submit" name="submit" value="Submit Enquiry" class="button medium blue round" style="cursor: pointer; padding: 10px 25px; font-weight: bold; background: #4a89dc; color: #fff; border: none; border-radius: 3px;" />
+	</div>
+</form>
 
     
 				</section>
@@ -223,5 +258,74 @@
 	<!-- main wrapp starts-->
 </div>
 <!-- main container ends-->
+<script type="text/javascript">
+var generatedCaptchaCode = '';
+
+function generateCaptcha() {
+	var chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+	generatedCaptchaCode = '';
+	for (var i = 0; i < 5; i++) {
+		generatedCaptchaCode += chars.charAt(Math.floor(Math.random() * chars.length));
+	}
+	var canvas = document.getElementById('captchaCanvas');
+	if (canvas && canvas.getContext) {
+		var ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = '#f4f6f9';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		
+		// Noise lines
+		for (var l = 0; l < 4; l++) {
+			ctx.strokeStyle = 'rgba(74, 137, 220, ' + (0.15 + Math.random() * 0.2) + ')';
+			ctx.beginPath();
+			ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+			ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+			ctx.stroke();
+		}
+		
+		// Text
+		ctx.font = 'bold 20px Arial';
+		ctx.fillStyle = '#142864';
+		for (var c = 0; c < generatedCaptchaCode.length; c++) {
+			ctx.save();
+			ctx.translate(15 + c * 22, 25);
+			ctx.rotate((Math.random() - 0.5) * 0.25);
+			ctx.fillText(generatedCaptchaCode.charAt(c), 0, 0);
+			ctx.restore();
+		}
+	}
+}
+
+function validateEnquiryForm() {
+	var name = document.getElementById('name').value.trim();
+	var email = document.getElementById('email').value.trim();
+	var mobile = document.getElementById('mobile').value.trim();
+	var captchaInput = document.getElementById('captcha_input').value.trim();
+	var errorDiv = document.getElementById('form-error-msg');
+	
+	if (!name || !email || !mobile) {
+		errorDiv.innerText = 'Please fill in all required fields (Name, Email, Mobile).';
+		errorDiv.style.display = 'block';
+		return false;
+	}
+	
+	if (captchaInput.toLowerCase() !== generatedCaptchaCode.toLowerCase()) {
+		errorDiv.innerText = 'Security verification code does not match. Please try again.';
+		errorDiv.style.display = 'block';
+		generateCaptcha();
+		document.getElementById('captcha_input').value = '';
+		return false;
+	}
+	
+	errorDiv.style.display = 'none';
+	return true;
+}
+
+$(document).ready(function() {
+	if (document.getElementById('captchaCanvas')) {
+		generateCaptcha();
+	}
+});
+</script>
 </body>
 </html>
